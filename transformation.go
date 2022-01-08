@@ -24,7 +24,7 @@ type ImageTransformation struct {
 	imageType  ImageType
 }
 
-// Creates a new image transformation from the given buffer. The file type
+// NewImageTransformation creates a new image transformation from the given buffer. The file type
 // is determined by the header of the buffer and the image is decoded
 // according to that determined file type.
 func NewImageTransformation(buf []byte) (*ImageTransformation, error) {
@@ -100,8 +100,8 @@ func (rm ResizeMode) String() string {
 }
 
 type ResizeOptions struct {
-	Height         int
-	Width          int
+	Height         float64
+	Width          float64
 	Top            int
 	Left           int
 	Zoom           int
@@ -112,8 +112,8 @@ type ResizeOptions struct {
 
 func calculateResizeFactor(opts *ResizeOptions, inWidth, inHeight int) float64 {
 	factor := 1.0
-	xfactor := float64(inWidth) / float64(opts.Width)
-	yfactor := float64(inHeight) / float64(opts.Height)
+	xfactor := float64(inWidth) / opts.Width
+	yfactor := float64(inHeight) / opts.Height
 
 	switch {
 	// Fixed width and height
@@ -125,19 +125,19 @@ func calculateResizeFactor(opts *ResizeOptions, inWidth, inHeight int) float64 {
 			// The bigger dimension is the limit.
 			if xfactor > yfactor {
 				factor = xfactor
-				opts.Height = roundFloat(float64(inHeight) / factor)
+				opts.Height = float64(inHeight) / factor
 			} else {
 				factor = yfactor
-				opts.Width = roundFloat(float64(inWidth) / factor)
+				opts.Width = float64(inWidth) / factor
 			}
 		case ResizeModeFitUp:
 			// The smaller dimension is the limit.
 			if yfactor > xfactor {
 				factor = xfactor
-				opts.Height = roundFloat(float64(inHeight) / factor)
+				opts.Height = float64(inHeight) / factor
 			} else {
 				factor = yfactor
-				opts.Width = roundFloat(float64(inWidth) / factor)
+				opts.Width = float64(inWidth) / factor
 			}
 		default:
 			factor = math.Min(xfactor, yfactor)
@@ -145,23 +145,23 @@ func calculateResizeFactor(opts *ResizeOptions, inWidth, inHeight int) float64 {
 	// Fixed width, auto height
 	case opts.Width > 0:
 		if opts.Mode == ResizeModeForce {
-			opts.Height = inHeight
+			opts.Height = float64(inHeight)
 		} else {
 			factor = xfactor
-			opts.Height = roundFloat(float64(inHeight) / factor)
+			opts.Height = float64(inHeight) / factor
 		}
 	// Fixed height, auto width
 	case opts.Height > 0:
 		if opts.Mode == ResizeModeForce {
-			opts.Width = inWidth
+			opts.Width = float64(inWidth)
 		} else {
 			factor = yfactor
-			opts.Width = roundFloat(float64(inWidth) / factor)
+			opts.Width = float64(inWidth) / factor
 		}
 	// Identity transform
 	default:
-		opts.Width = inWidth
-		opts.Height = inHeight
+		opts.Width = float64(inWidth)
+		opts.Height = float64(inHeight)
 		break
 	}
 
@@ -439,7 +439,7 @@ func (it *ImageTransformation) Gamma(gamma float64) error {
 	}
 }
 
-// Change (or enforce) the given interpretation/colorspace.
+// ChangeColorspace changes (or enforces) the given interpretation/colorspace.
 func (it *ImageTransformation) ChangeColorspace(interpretation Interpretation) error {
 	if image, err := vipsColourspace(it.image, interpretation); err != nil {
 		return err

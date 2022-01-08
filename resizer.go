@@ -143,8 +143,8 @@ func resizeIfNecessary(t *ImageTransformation, o Options) error {
 	}
 
 	if err := t.Resize(ResizeOptions{
-		Height:         o.Height,
-		Width:          o.Width,
+		Height:         float64(o.Height),
+		Width:          float64(o.Width),
 		Top:            o.Top,
 		Left:           o.Left,
 		Zoom:           o.Zoom,
@@ -432,13 +432,6 @@ func shrinkOnLoad(buf []byte, imageType ImageType, factor float64, shrink int) (
 	}
 
 	return image, factor, err
-}
-
-func roundFloat(f float64) int {
-	if f < 0 {
-		return int(math.Ceil(f - 0.5))
-	}
-	return int(math.Floor(f + 0.5))
 }
 
 func calculateCrop(inWidth, inHeight, outWidth, outHeight int, gravity Gravity) (int, int) {

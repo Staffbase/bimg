@@ -69,7 +69,7 @@ func TestImageTransformation_Resize(t *testing.T) {
 			if err != nil {
 				t.Fatalf("cannot load image: %v", err)
 			}
-			if err := imageTrans.Resize(ResizeOptions{Width: test.width, Height: test.height, Mode: test.mode}); err != nil {
+			if err := imageTrans.Resize(ResizeOptions{Width: float64(test.width), Height: float64(test.height), Mode: test.mode}); err != nil {
 				t.Fatalf("cannot resize image: %v", err)
 			}
 			size := imageTrans.Size()
@@ -83,6 +83,30 @@ func TestImageTransformation_Resize(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("shrink on tainted buffer", func(t *testing.T) {
+		imageTrans, err := NewImageTransformation(readImage("test_tainted.jpg"))
+		if err != nil {
+			t.Fatalf("cannot load image: %v", err)
+		}
+		// perform auto-rotate first to taint the buffer
+		if err := imageTrans.Rotate(RotateOptions{}); err != nil {
+			t.Fatalf("cannot auto-rotate image: %v", err)
+		}
+		if err := imageTrans.Resize(ResizeOptions{Width: 1000, Height: 1000, Mode: ResizeModeFit}); err != nil {
+			t.Fatalf("cannot resize image: %v", err)
+		}
+		size := imageTrans.Size()
+		expectedSize := ImageSize{1000, 563}
+		if size != expectedSize {
+			t.Errorf("unexpected size. wanted %#v, got %#v", expectedSize, size)
+		}
+		if out, err := imageTrans.Save(SaveOptions{Type: JPEG}); err != nil {
+			t.Errorf("cannot save image: %v", err)
+		} else {
+			Write(fmt.Sprintf("testdata/transformation_resize_%s_out.jpeg", "shrink on tainted buffer"), out)
+		}
+	})
 
 	t.Run("upscale", func(t *testing.T) {
 		imageTrans, err := NewImageTransformation(readImage("test.webp"))
